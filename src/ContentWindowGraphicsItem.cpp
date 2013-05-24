@@ -58,7 +58,7 @@ ContentWindowGraphicsItem::ContentWindowGraphicsItem(boost::shared_ptr<ContentWi
 
     // border based on if we're selected or not
     // use the -1 argument to force an update but not emit signals
-    setSelected(selected_, (ContentWindowInterface *)-1);
+    setWindowState(windowState_, (ContentWindowInterface *)-1);
 
     // current coordinates
     setRect(x_, y_, w_, h_);
@@ -212,22 +212,26 @@ void ContentWindowGraphicsItem::setZoom(double zoom, ContentWindowInterface * so
     }
 }
 
-void ContentWindowGraphicsItem::setSelected(bool selected, ContentWindowInterface * source)
+void ContentWindowGraphicsItem::setWindowState(ContentWindowInterface::WindowState state, ContentWindowInterface * source)
 {
-    ContentWindowInterface::setSelected(selected, source);
+    ContentWindowInterface::setWindowState(state, source);
 
     if(source != this)
     {
         // set the pen
         QPen p = pen();
 
-        if(selected_ == true)
+        if(windowState_ == SELECTED)
         {
             p.setColor(QColor(255,0,0));
         }
-        else
+        else if(windowState_ == UNSELECTED)
         {
             p.setColor(QColor(0,0,0));
+        }
+        else if(windowState_ == INTERACTION)
+        {
+            p.setColor(QColor(0,255,0));
         }
 
         setPen(p);
@@ -235,6 +239,11 @@ void ContentWindowGraphicsItem::setSelected(bool selected, ContentWindowInterfac
         // force a redraw
         update();
     }
+}
+
+void ContentWindowGraphicsItem::setInteractionState(ContentWindowInterface::InteractionState state, ContentWindowInterface * source)
+{
+    ContentWindowInterface::setInteractionState(state, source);
 }
 
 void ContentWindowGraphicsItem::setZToFront()
@@ -246,7 +255,7 @@ void ContentWindowGraphicsItem::setZToFront()
 void ContentWindowGraphicsItem::mouseMoveEvent(QGraphicsSceneMouseEvent * event)
 {
     // handle mouse movements differently depending on selected mode of item
-    if(selected_ == false)
+    if(windowState_ == UNSELECTED)
     {
         if(event->buttons().testFlag(Qt::LeftButton) == true)
         {
@@ -275,7 +284,7 @@ void ContentWindowGraphicsItem::mouseMoveEvent(QGraphicsSceneMouseEvent * event)
             }
         }
     }
-    else
+    else if(windowState_ == SELECTED)
     {
         // handle zooms / pans
         QPointF delta = event->scenePos() - event->lastScenePos();
@@ -314,6 +323,7 @@ void ContentWindowGraphicsItem::mouseMoveEvent(QGraphicsSceneMouseEvent * event)
         // force a redraw to update window info label
         update();
     }
+    // TODO: do something else if INTERACTION state
 }
 
 void ContentWindowGraphicsItem::mousePressEvent(QGraphicsSceneMouseEvent * event)
@@ -368,9 +378,20 @@ void ContentWindowGraphicsItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *
         return;
     }
 
-    bool selected = !selected_;
+    // move to next state
+    switch(windowState_){
+        case UNSELECTED:
+            windowState_ = SELECTED;
+            break;
+        case SELECTED:
+            windowState_ = INTERACTION;
+            break;
+        case INTERACTION:
+            windowState_ = UNSELECTED;
+            break;
+    }
 
-    setSelected(selected);
+    setWindowState(windowState_);
 
     QGraphicsItem::mouseDoubleClickEvent(event);
 }
@@ -394,8 +415,8 @@ void ContentWindowGraphicsItem::wheelEvent(QGraphicsSceneWheelEvent * event)
         return;
     }
 
-    // handle wheel movements differently depending on selected mode of item
-    if(selected_ == false)
+    // handle wheel movements differently depending on state of item window
+    if(windowState_ == UNSELECTED)
     {
         // scale size based on wheel delta
         // typical delta value is 120, so scale based on that
@@ -403,7 +424,7 @@ void ContentWindowGraphicsItem::wheelEvent(QGraphicsSceneWheelEvent * event)
 
         scaleSize(factor);
     }
-    else
+    else if(windowState_ == SELECTED)
     {
         // change zoom based on wheel delta
         // deltas are counted in 1/8 degrees. so, scale based on 180 degrees => delta = 180*8 = 1440
@@ -412,4 +433,5 @@ void ContentWindowGraphicsItem::wheelEvent(QGraphicsSceneWheelEvent * event)
 
         setZoom(zoom);
     }
+    // TODO: do something for INTERACTION state
 }
