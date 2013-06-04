@@ -37,11 +37,10 @@
 /*********************************************************************/
 
 #include "dcStream.h"
-#include "../NetworkProtocol.h"
+#include "DcSocket.h"
 #include "../MessageHeader.h"
 #include "../ParallelPixelStreamSegmentParameters.h"
 #include "../log.h"
-#include <QtNetwork/QTcpSocket>
 #include <QtCore>
 #include <cmath>
 #include <turbojpeg.h>
@@ -72,39 +71,18 @@ DcImage dcStreamComputeJpegMapped(const DcImage & dcImage);
 
 DcSocket * dcStreamConnect(const char * hostname)
 {
-    DcSocket * socket = new QTcpSocket();
+    DcSocket * dcSocket = new DcSocket(hostname);
 
-    // open connection
-    socket->connectToHost(hostname, 1701);
-
-    if(socket->waitForConnected() != true)
+    if(dcSocket->isConnected() != true)
     {
+        delete dcSocket;
+
         put_flog(LOG_ERROR, "could not connect to host %s", hostname);
 
         return NULL;
     }
 
-    // handshake
-    while(socket->waitForReadyRead() && socket->bytesAvailable() < (int)sizeof(int32_t))
-    {
-    #ifndef _WIN32
-        usleep(10);
-    #endif
-    }
-
-    int32_t protocolVersion = -1;
-    socket->read((char *)&protocolVersion, sizeof(int32_t));
-
-    if(protocolVersion != NETWORK_PROTOCOL_VERSION)
-    {
-        socket->disconnectFromHost();
-
-        put_flog(LOG_ERROR, "unsupported protocol version %i != %i", protocolVersion, NETWORK_PROTOCOL_VERSION);
-
-        return NULL;
-    }
-
-    return socket;
+    return dcSocket;
 }
 
 void dcStreamDisconnect(DcSocket * socket)
@@ -284,14 +262,17 @@ bool dcStreamSendJpeg(DcSocket * socket, DcStreamParameters parameters, const ch
         return false;
     }
 
-    if(socket->state() != QAbstractSocket::ConnectedState)
+    if(socket->isConnected() != true)
     {
         put_flog(LOG_ERROR, "socket is not connected");
 
         return false;
     }
 
-    // send the parameters and image data
+    // this byte array will hold the entire message to be sent over the socket
+    QByteArray message;
+
+    // the message header
     MessageHeader mh;
     mh.size = sizeof(ParallelPixelStreamSegmentParameters) + jpegSize;
     mh.type = MESSAGE_TYPE_PARALLEL_PIXELSTREAM;
@@ -300,17 +281,9 @@ bool dcStreamSendJpeg(DcSocket * socket, DcStreamParameters parameters, const ch
     size_t len = parameters.name.copy(mh.uri, MESSAGE_HEADER_URI_LENGTH - 1);
     mh.uri[len] = '\0';
 
-    // send the header
-    int sent = socket->write((const char *)&mh, sizeof(MessageHeader));
+    message.append((const char *)&mh, sizeof(MessageHeader));
 
-    while(sent < (int)sizeof(MessageHeader))
-    {
-        sent += socket->write((const char *)&mh + sent, sizeof(MessageHeader) - sent);
-    }
-
-    // send the message
-
-    // part 1: parameters
+    // message part 1: parameters
     ParallelPixelStreamSegmentParameters p;
 
     p.sourceIndex = parameters.sourceIndex;
@@ -322,33 +295,16 @@ bool dcStreamSendJpeg(DcSocket * socket, DcStreamParameters parameters, const ch
     p.totalWidth = parameters.totalWidth;
     p.totalHeight = parameters.totalHeight;
 
-    sent = socket->write((const char *)&(p), sizeof(ParallelPixelStreamSegmentParameters));
+    message.append((const char *)&p, sizeof(ParallelPixelStreamSegmentParameters));
 
-    while(sent < (int)sizeof(ParallelPixelStreamSegmentParameters))
-    {
-        sent += socket->write((const char *)&(p) + sent, sizeof(ParallelPixelStreamSegmentParameters) - sent);
-    }
-
-    // part 2: image data
+    // message part 2: image data
     if(jpegSize > 0)
     {
-        sent = socket->write(jpegData, jpegSize);
-
-        while(sent < jpegSize)
-        {
-            sent += socket->write(jpegData + sent, jpegSize - sent);
-        }
+        message.append(jpegData, jpegSize);
     }
 
-    // wait for acknowledgment
-    while(socket->waitForReadyRead() && socket->bytesAvailable() < 3)
-    {
-#ifndef _WIN32
-        usleep(10);
-#endif
-    }
-
-    socket->read(3);
+    // queue the message to be sent
+    bool success = socket->queueMessage(message);
 
     // make sure this sourceIndex is in the vector of current source indices for this stream name
     if(count(g_dcStreamSourceIndices[parameters.name].begin(), g_dcStreamSourceIndices[parameters.name].end(), parameters.sourceIndex) == 0)
@@ -356,7 +312,7 @@ bool dcStreamSendJpeg(DcSocket * socket, DcStreamParameters parameters, const ch
         g_dcStreamSourceIndices[parameters.name].push_back(parameters.sourceIndex);
     }
 
-    return true;
+    return success;
 }
 
 bool dcStreamComputeJpeg(unsigned char * imageBuffer, int width, int pitch, int height, PIXEL_FORMAT pixelFormat, char ** jpegData, int & jpegSize)
@@ -450,14 +406,17 @@ bool dcStreamSendSVG(DcSocket * socket, std::string name, const char * svgData, 
         return false;
     }
 
-    if(socket->state() != QAbstractSocket::ConnectedState)
+    if(socket->isConnected() != true)
     {
         put_flog(LOG_ERROR, "socket is not connected");
 
         return false;
     }
 
-    // send the parameters and image data
+    // this byte array will hold the entire message to be sent over the socket
+    QByteArray message;
+
+    // the message header
     MessageHeader mh;
     mh.size = svgSize;
     mh.type = MESSAGE_TYPE_SVG_STREAM;
@@ -466,38 +425,18 @@ bool dcStreamSendSVG(DcSocket * socket, std::string name, const char * svgData, 
     size_t len = name.copy(mh.uri, MESSAGE_HEADER_URI_LENGTH - 1);
     mh.uri[len] = '\0';
 
-    // send the header
-    int sent = socket->write((const char *)&mh, sizeof(MessageHeader));
+    message.append((const char *)&mh, sizeof(MessageHeader));
 
-    while(sent < (int)sizeof(MessageHeader))
-    {
-        sent += socket->write((const char *)&mh + sent, sizeof(MessageHeader) - sent);
-    }
-
-    // send the message
-
-    // part 1: image data
+    // message part 1: image data
     if(svgSize > 0)
     {
-        sent = socket->write(svgData, svgSize);
-
-        while(sent < svgSize)
-        {
-            sent += socket->write(svgData + sent, svgSize - sent);
-        }
+        message.append(svgData, svgSize);
     }
 
-    // wait for acknowledgment
-    while(socket->waitForReadyRead() && socket->bytesAvailable() < 3)
-    {
-#ifndef _WIN32
-        usleep(10);
-#endif
-    }
+    // queue the message to be sent
+    bool success = socket->queueMessage(message);
 
-    socket->read(3);
-
-    return true;
+    return success;
 }
 
 DcImage dcStreamComputeJpegMapped(const DcImage & dcImage)

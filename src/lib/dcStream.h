@@ -42,8 +42,7 @@
 #include <string>
 #include <vector>
 
-class QTcpSocket;
-typedef QTcpSocket DcSocket;
+class DcSocket;
 
 struct DcStreamParameters  {
     std::string name;
