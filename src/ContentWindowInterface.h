@@ -54,27 +54,26 @@ class ContentWindowInterface : public QObject {
 
     public:
 
-        ContentWindowInterface() { }
-        ContentWindowInterface(boost::shared_ptr<ContentWindowManager> contentWindowManager);
-
         enum WindowState {
-            UNSELECTED,   // the window is not selected and interaction changes it's position/size
-            SELECTED,     // the window is selected and interaction modifies its contents
-            INTERACTION   // interaction within the windows is forwarded to the content source
+            UNSELECTED,   // the window is not selected and interaction changes its position/size
+            SELECTED,     // the window is selected and interaction modifies its zoom/pan
+            INTERACTION   // interaction within the window may be forwarded to the content source
         };
 
-        // reflects the state of input devices acting within the content window
+        // the state of interaction within the window (mouse emulation)
         struct InteractionState {
-            float mouseX_, mouseY_;
+            double mouseX_, mouseY_;
             bool mouseLeft_, mouseRight_, mouseMiddle_;
 
-            InteractionState() {
-                mouseX_ = mouseY_ = 0;
+            InteractionState()
+            {
+                mouseX_ = mouseY_ = 0.;
                 mouseLeft_ = mouseRight_ = mouseMiddle_ = false;
             }
 
             template <typename Archive>
-            void serialize(Archive& ar, const unsigned int version) {
+            void serialize(Archive & ar, const unsigned int version)
+            {
                 ar & mouseX_;
                 ar & mouseY_;
                 ar & mouseLeft_;
@@ -82,6 +81,9 @@ class ContentWindowInterface : public QObject {
                 ar & mouseMiddle_;
             }
         };
+
+        ContentWindowInterface() { }
+        ContentWindowInterface(boost::shared_ptr<ContentWindowManager> contentWindowManager);
 
         boost::shared_ptr<ContentWindowManager> getContentWindowManager();
 
@@ -92,8 +94,8 @@ class ContentWindowInterface : public QObject {
         void getCenter(double &centerX, double &centerY);
         double getZoom();
         bool getHighlighted();
-        void getWindowState(ContentWindowInterface::WindowState &wState);
-        void getInteractionState(ContentWindowInterface::InteractionState &iState);
+        ContentWindowInterface::WindowState getWindowState();
+        ContentWindowInterface::InteractionState getInteractionState();
 
         // button dimensions
         void getButtonDimensions(float &width, float &height);
@@ -114,8 +116,8 @@ class ContentWindowInterface : public QObject {
         virtual void setCenter(double centerX, double centerY, ContentWindowInterface * source=NULL);
         virtual void setZoom(double zoom, ContentWindowInterface * source=NULL);
         virtual void highlight(ContentWindowInterface * source=NULL);
-        virtual void setWindowState(ContentWindowInterface::WindowState wState, ContentWindowInterface * source=NULL);
-        virtual void setInteractionState(ContentWindowInterface::InteractionState iState, ContentWindowInterface * source=NULL);
+        virtual void setWindowState(ContentWindowInterface::WindowState windowState, ContentWindowInterface * source=NULL);
+        virtual void setInteractionState(ContentWindowInterface::InteractionState interactionState, ContentWindowInterface * source=NULL);
         virtual void moveToFront(ContentWindowInterface * source=NULL);
         virtual void close(ContentWindowInterface * source=NULL);
 
@@ -130,8 +132,8 @@ class ContentWindowInterface : public QObject {
         void centerChanged(double centerX, double centerY, ContentWindowInterface * source);
         void zoomChanged(double zoom, ContentWindowInterface * source);
         void highlighted(ContentWindowInterface * source);
-        void windowStateChanged(ContentWindowInterface::WindowState wState, ContentWindowInterface * source);
-        void interactionStateChanged(ContentWindowInterface::InteractionState iState, ContentWindowInterface * source); 
+        void windowStateChanged(ContentWindowInterface::WindowState windowState, ContentWindowInterface * source);
+        void interactionStateChanged(ContentWindowInterface::InteractionState interactionState, ContentWindowInterface * source);
         void movedToFront(ContentWindowInterface * source);
         void closed(ContentWindowInterface * source);
 

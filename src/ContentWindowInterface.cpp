@@ -140,18 +140,14 @@ double ContentWindowInterface::getZoom()
     return zoom_;
 }
 
-void ContentWindowInterface::getWindowState(ContentWindowInterface::WindowState &wState)
+ContentWindowInterface::WindowState ContentWindowInterface::getWindowState()
 {
-    wState = windowState_;
+    return windowState_;
 }
 
-void ContentWindowInterface::getInteractionState(ContentWindowInterface::InteractionState &iState)
+ContentWindowInterface::InteractionState ContentWindowInterface::getInteractionState()
 {
-    iState.mouseX_ = interactionState_.mouseX_;
-    iState.mouseY_ = interactionState_.mouseY_;
-    iState.mouseLeft_ = interactionState_.mouseLeft_;
-    iState.mouseRight_ = interactionState_.mouseRight_;
-    iState.mouseMiddle_ = interactionState_.mouseMiddle_;
+    return interactionState_;
 }
 
 bool ContentWindowInterface::getHighlighted()
@@ -464,14 +460,14 @@ void ContentWindowInterface::setZoom(double zoom, ContentWindowInterface * sourc
     }
 }
 
-void ContentWindowInterface::setWindowState(ContentWindowInterface::WindowState state, ContentWindowInterface * source)
+void ContentWindowInterface::setWindowState(ContentWindowInterface::WindowState windowState, ContentWindowInterface * source)
 {
     if(source == this)
     {
         return;
     }
 
-    windowState_ = state;
+    windowState_ = windowState;
 
     if(source == NULL || dynamic_cast<ContentWindowManager *>(this) != NULL)
     {
@@ -484,14 +480,14 @@ void ContentWindowInterface::setWindowState(ContentWindowInterface::WindowState 
     }
 }
 
-void ContentWindowInterface::setInteractionState(ContentWindowInterface::InteractionState state, ContentWindowInterface * source)
+void ContentWindowInterface::setInteractionState(ContentWindowInterface::InteractionState interactionState, ContentWindowInterface * source)
 {
     if(source == this)
     {
         return;
     }
 
-    interactionState_ = state;
+    interactionState_ = interactionState;
 
     if(source == NULL || dynamic_cast<ContentWindowManager *>(this) != NULL)
     {

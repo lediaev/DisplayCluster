@@ -160,9 +160,17 @@ void ContentWindowManager::render()
         glPushAttrib(GL_CURRENT_BIT);
 
         // color the border based on window state
-        if(windowState_ == SELECTED)
+        if(windowState_ == UNSELECTED)
+        {
+            glColor4f(1,1,1,1);
+        }
+        else if(windowState_ == SELECTED)
         {
             glColor4f(1,0,0,1);
+        }
+        else if(windowState_ == INTERACTION)
+        {
+            glColor4f(0,1,0,1);
         }
         else
         {

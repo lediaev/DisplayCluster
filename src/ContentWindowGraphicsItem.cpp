@@ -218,26 +218,30 @@ void ContentWindowGraphicsItem::setZoom(double zoom, ContentWindowInterface * so
     }
 }
 
-void ContentWindowGraphicsItem::setWindowState(ContentWindowInterface::WindowState state, ContentWindowInterface * source)
+void ContentWindowGraphicsItem::setWindowState(ContentWindowInterface::WindowState windowState, ContentWindowInterface * source)
 {
-    ContentWindowInterface::setWindowState(state, source);
+    ContentWindowInterface::setWindowState(windowState, source);
 
     if(source != this)
     {
         // set the pen
         QPen p = pen();
 
-        if(windowState_ == SELECTED)
-        {
-            p.setColor(QColor(255,0,0));
-        }
-        else if(windowState_ == UNSELECTED)
+        if(windowState_ == UNSELECTED)
         {
             p.setColor(QColor(0,0,0));
+        }
+        else if(windowState_ == SELECTED)
+        {
+            p.setColor(QColor(255,0,0));
         }
         else if(windowState_ == INTERACTION)
         {
             p.setColor(QColor(0,255,0));
+        }
+        else
+        {
+            p.setColor(QColor(0,0,0));
         }
 
         setPen(p);
@@ -247,9 +251,15 @@ void ContentWindowGraphicsItem::setWindowState(ContentWindowInterface::WindowSta
     }
 }
 
-void ContentWindowGraphicsItem::setInteractionState(ContentWindowInterface::InteractionState state, ContentWindowInterface * source)
+void ContentWindowGraphicsItem::setInteractionState(ContentWindowInterface::InteractionState interactionState, ContentWindowInterface * source)
 {
-    ContentWindowInterface::setInteractionState(state, source);
+    ContentWindowInterface::setInteractionState(interactionState, source);
+
+    if(source != this)
+    {
+        // force a redraw
+        update();
+    }
 }
 
 void ContentWindowGraphicsItem::setZToFront()
@@ -339,20 +349,9 @@ void ContentWindowGraphicsItem::mouseMoveEvent(QGraphicsSceneMouseEvent * event)
         interactionState.mouseX_ = (eventPos.x() - r.x()) / r.width();
         interactionState.mouseY_ = (eventPos.y() - r.y()) / r.height();
 
-        if(event->buttons().testFlag(Qt::LeftButton) == true)
-            interactionState.mouseLeft_ = true;
-        else
-            interactionState.mouseLeft_ = false;
-
-         if(event->buttons().testFlag(Qt::MiddleButton) == true)
-            interactionState.mouseMiddle_ = true;
-         else
-            interactionState.mouseMiddle_ = false;
-
-        if(event->buttons().testFlag(Qt::RightButton) == true)
-            interactionState.mouseRight_ = true;
-         else
-            interactionState.mouseRight_ = false;
+        interactionState.mouseLeft_ = event->buttons().testFlag(Qt::LeftButton);
+        interactionState.mouseMiddle_ = event->buttons().testFlag(Qt::MiddleButton);
+        interactionState.mouseRight_ = event->buttons().testFlag(Qt::RightButton);
 
         setInteractionState(interactionState);
 
@@ -414,7 +413,8 @@ void ContentWindowGraphicsItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *
     }
 
     // move to next state
-    switch(windowState_){
+    switch(windowState_)
+    {
         case UNSELECTED:
             windowState_ = SELECTED;
             break;
@@ -468,5 +468,4 @@ void ContentWindowGraphicsItem::wheelEvent(QGraphicsSceneWheelEvent * event)
 
         setZoom(zoom);
     }
-    // TODO: do something for INTERACTION state
 }

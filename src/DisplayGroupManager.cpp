@@ -269,9 +269,6 @@ bool DisplayGroupManager::saveStateXMLFile(std::string filename)
 
         double zoom = contentWindowManagers[i]->getZoom();
 
-        ContentWindowInterface::WindowState windowState;
-        contentWindowManagers[i]->getWindowState(windowState);
-
         // add the XML node with these values
         QDomElement cwmNode = doc.createElement("ContentWindow");
         root.appendChild(cwmNode);
@@ -307,7 +304,6 @@ bool DisplayGroupManager::saveStateXMLFile(std::string filename)
         n = doc.createElement("zoom");
         n.appendChild(doc.createTextNode(QString::number(zoom)));
         cwmNode.appendChild(n);
-
     }
 
     QString xml = doc.toString();
@@ -383,8 +379,6 @@ bool DisplayGroupManager::loadStateXMLFile(std::string filename)
         double x, y, w, h, centerX, centerY, zoom;
         x = y = w = h = centerX = centerY = zoom = -1.;
 
-        //bool selected = false;
-
         sprintf(string, "string(//state/ContentWindow[%i]/x)", i);
         query.setQuery(string);
 
@@ -441,16 +435,6 @@ bool DisplayGroupManager::loadStateXMLFile(std::string filename)
             zoom = qstring.toDouble();
         }
 
-        /*
-        sprintf(string, "string(//state/ContentWindow[%i]/selected)", i);
-        query.setQuery(string);
-
-        if(query.evaluateTo(&qstring) == true)
-        {
-            selected = (bool)qstring.toInt();
-        }
-        */
-
         // add the window if we have a valid URI
         if(uri.empty() == false)
         {
@@ -483,8 +467,6 @@ bool DisplayGroupManager::loadStateXMLFile(std::string filename)
                 {
                     cwm->setCenter(centerX, centerY);
                 }
-
-                //cwm->setSelected(selected);
             }
         }
     }
