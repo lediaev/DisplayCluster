@@ -63,7 +63,7 @@ ContentWindowManager::ContentWindowManager(boost::shared_ptr<Content> content)
     zoom_ = 1.;
 
     // default window state
-    selected_ = false;
+    windowState_ = UNSELECTED;
 
     // set content object
     content_ = content;
@@ -104,7 +104,8 @@ void ContentWindowManager::setDisplayGroupManager(boost::shared_ptr<DisplayGroup
         connect(this, SIGNAL(sizeChanged(double, double, ContentWindowInterface *)), displayGroupManager.get(), SLOT(sendDisplayGroup()));
         connect(this, SIGNAL(centerChanged(double, double, ContentWindowInterface *)), displayGroupManager.get(), SLOT(sendDisplayGroup()));
         connect(this, SIGNAL(zoomChanged(double, ContentWindowInterface *)), displayGroupManager.get(), SLOT(sendDisplayGroup()));
-        connect(this, SIGNAL(selectedChanged(bool, ContentWindowInterface *)), displayGroupManager.get(), SLOT(sendDisplayGroup()));
+        connect(this, SIGNAL(windowStateChanged(ContentWindowInterface::WindowState, ContentWindowInterface *)), displayGroupManager.get(), SLOT(sendDisplayGroup()));
+        connect(this, SIGNAL(interactionStateChanged(ContentWindowInterface::InteractionState, ContentWindowInterface *)), displayGroupManager.get(), SLOT(sendDisplayGroup()));
 
         // we don't call sendDisplayGroup() on movedToFront() or destroyed() since it happens already
     }
@@ -159,7 +160,7 @@ void ContentWindowManager::render()
         glPushAttrib(GL_CURRENT_BIT);
 
         // color the border based on window state
-        if(selected_ == true)
+        if(windowState_ == SELECTED)
         {
             glColor4f(1,0,0,1);
         }
