@@ -151,8 +151,14 @@ void ContentWindowGraphicsItem::paint(QPainter * painter, const QStyleOptionGrap
 
         QString coordinatesLabel = QString(" (") + QString::number(x_, 'f', 2) + QString(" ,") + QString::number(y_, 'f', 2) + QString(", ") + QString::number(w_, 'f', 2) + QString(", ") + QString::number(h_, 'f', 2) + QString(")\n");
         QString zoomCenterLabel = QString(" zoom = ") + QString::number(zoom_, 'f', 2) + QString(" @ (") + QString::number(centerX_, 'f', 2) + QString(", ") + QString::number(centerY_, 'f', 2) + QString(")");
+        QString interactionLabel = QString(" x: ") + 
+                QString::number(interactionState_.mouseX_, 'f', 2) + 
+                QString(" y: ") + QString::number(interactionState_.mouseY_, 'f', 2) + 
+                QString(" mouseLeft: ") + QString::number((int) interactionState_.mouseLeft_, 'b', 1) + 
+                QString(" mouseMiddle: ") + QString::number((int) interactionState_.mouseMiddle_, 'b', 1) + 
+                QString(" mouseRight: ") + QString::number((int) interactionState_.mouseRight_, 'b', 1);
 
-        QString windowInfoLabel = coordinatesLabel + zoomCenterLabel;
+        QString windowInfoLabel = coordinatesLabel + zoomCenterLabel + interactionLabel;
         painter->drawText(textBoundingRect, Qt::AlignLeft | Qt::AlignBottom, windowInfoLabel);
     }
 }
@@ -323,7 +329,36 @@ void ContentWindowGraphicsItem::mouseMoveEvent(QGraphicsSceneMouseEvent * event)
         // force a redraw to update window info label
         update();
     }
-    // TODO: do something else if INTERACTION state
+    else if(windowState_ == INTERACTION)
+    {
+        QRectF r = rect();
+        QPointF eventPos = event->pos();
+
+        InteractionState interactionState = interactionState_;
+
+        interactionState.mouseX_ = (eventPos.x() - r.x()) / r.width();
+        interactionState.mouseY_ = (eventPos.y() - r.y()) / r.height();
+
+        if(event->buttons().testFlag(Qt::LeftButton) == true)
+            interactionState.mouseLeft_ = true;
+        else
+            interactionState.mouseLeft_ = false;
+
+         if(event->buttons().testFlag(Qt::MiddleButton) == true)
+            interactionState.mouseMiddle_ = true;
+         else
+            interactionState.mouseMiddle_ = false;
+
+        if(event->buttons().testFlag(Qt::RightButton) == true)
+            interactionState.mouseRight_ = true;
+         else
+            interactionState.mouseRight_ = false;
+
+        setInteractionState(interactionState);
+
+        // force a redraw to update window info label
+        update();
+    }
 }
 
 void ContentWindowGraphicsItem::mousePressEvent(QGraphicsSceneMouseEvent * event)

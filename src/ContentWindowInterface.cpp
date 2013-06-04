@@ -60,6 +60,12 @@ ContentWindowInterface::ContentWindowInterface(boost::shared_ptr<ContentWindowMa
         interactionState_ = contentWindowManager->interactionState_;
     }
 
+    // register WindowState in Qt
+    qRegisterMetaType<ContentWindowInterface::WindowState>("ContentWindowInterface::WindowState");
+
+    // register Interactionstate in Qt
+    qRegisterMetaType<ContentWindowInterface::InteractionState>("ContentWindowInterface::InteractionState");
+
     // connect signals from this to slots on the ContentWindowManager
     // use queued connections for thread-safety
     connect(this, SIGNAL(contentDimensionsChanged(int, int, ContentWindowInterface *)), contentWindowManager.get(), SLOT(setContentDimensions(int, int, ContentWindowInterface *)), Qt::QueuedConnection);
@@ -69,7 +75,7 @@ ContentWindowInterface::ContentWindowInterface(boost::shared_ptr<ContentWindowMa
     connect(this, SIGNAL(centerChanged(double, double, ContentWindowInterface *)), contentWindowManager.get(), SLOT(setCenter(double, double, ContentWindowInterface *)), Qt::QueuedConnection);
     connect(this, SIGNAL(zoomChanged(double, ContentWindowInterface *)), contentWindowManager.get(), SLOT(setZoom(double, ContentWindowInterface *)), Qt::QueuedConnection);
     connect(this, SIGNAL(windowStateChanged(ContentWindowInterface::WindowState, ContentWindowInterface *)), contentWindowManager.get(), SLOT(setWindowState(ContentWindowInterface::WindowState, ContentWindowInterface *)), Qt::QueuedConnection);
-    connect(this, SIGNAL(interactionStateChanged(ContentWindowInterface::InteractionState, ContentWindowInterface *)), contentWindowManager.get(), SLOT(setInteractionState(ContentWindowInterface::WindowState, ContentWindowInterface *)), Qt::QueuedConnection);
+    connect(this, SIGNAL(interactionStateChanged(ContentWindowInterface::InteractionState, ContentWindowInterface *)), contentWindowManager.get(), SLOT(setInteractionState(ContentWindowInterface::InteractionState, ContentWindowInterface *)), Qt::QueuedConnection);
     connect(this, SIGNAL(highlighted(ContentWindowInterface *)), contentWindowManager.get(), SLOT(highlight(ContentWindowInterface *)), Qt::QueuedConnection);
     connect(this, SIGNAL(movedToFront(ContentWindowInterface *)), contentWindowManager.get(), SLOT(moveToFront(ContentWindowInterface *)), Qt::QueuedConnection);
     connect(this, SIGNAL(closed(ContentWindowInterface *)), contentWindowManager.get(), SLOT(close(ContentWindowInterface *)), Qt::QueuedConnection);

@@ -69,12 +69,6 @@ DisplayGroupManager::DisplayGroupManager()
     // register types for use in signals/slots
     qRegisterMetaType<boost::shared_ptr<ContentWindowManager> >("boost::shared_ptr<ContentWindowManager>");
 
-    // register WindowState in Qt
-    qRegisterMetaType<ContentWindowInterface::WindowState>("ContentWindowInterface::WindowState");
-
-    // register Interactionstate in Qt
-    qRegisterMetaType<ContentWindowInterface::InteractionState>("ContentWindowInterface::InteractionState");
-
     // serialization support for the vector of skeleton states
 #if ENABLE_SKELETON_SUPPORT
     qRegisterMetaType<std::vector< boost::shared_ptr<SkeletonState> > >("std::vector< boost::shared_ptr<SkeletonState> >");

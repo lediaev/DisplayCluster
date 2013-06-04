@@ -68,6 +68,11 @@ class ContentWindowInterface : public QObject {
             float mouseX_, mouseY_;
             bool mouseLeft_, mouseRight_, mouseMiddle_;
 
+            InteractionState() {
+                mouseX_ = mouseY_ = 0;
+                mouseLeft_ = mouseRight_ = mouseMiddle_ = false;
+            }
+
             template <typename Archive>
             void serialize(Archive& ar, const unsigned int version) {
                 ar & mouseX_;

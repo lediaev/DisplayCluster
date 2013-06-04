@@ -104,8 +104,8 @@ void ContentWindowManager::setDisplayGroupManager(boost::shared_ptr<DisplayGroup
         connect(this, SIGNAL(sizeChanged(double, double, ContentWindowInterface *)), displayGroupManager.get(), SLOT(sendDisplayGroup()));
         connect(this, SIGNAL(centerChanged(double, double, ContentWindowInterface *)), displayGroupManager.get(), SLOT(sendDisplayGroup()));
         connect(this, SIGNAL(zoomChanged(double, ContentWindowInterface *)), displayGroupManager.get(), SLOT(sendDisplayGroup()));
-        connect(this, SIGNAL(windowStateChanged(ContentWindowInterface:WindowState, ContentWindowInterface *)), displayGroupManager.get(), SLOT(sendDisplayGroup()));
-        connect(this, SIGNAL(interactionStateChanged(ContentWindowInterface:InteractionState, ContentWindowInterface *)), displayGroupManager.get(), SLOT(sendDisplayGroup()));
+        connect(this, SIGNAL(windowStateChanged(ContentWindowInterface::WindowState, ContentWindowInterface *)), displayGroupManager.get(), SLOT(sendDisplayGroup()));
+        connect(this, SIGNAL(interactionStateChanged(ContentWindowInterface::InteractionState, ContentWindowInterface *)), displayGroupManager.get(), SLOT(sendDisplayGroup()));
 
         // we don't call sendDisplayGroup() on movedToFront() or destroyed() since it happens already
     }
