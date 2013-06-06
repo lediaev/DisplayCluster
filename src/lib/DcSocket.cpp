@@ -45,7 +45,7 @@ DcSocket::DcSocket(const char * hostname)
 {
     // defaults
     socket_ = NULL;
-    firstMessageQueued_ = false;
+    disconnectFlag_ = false;
 
     if(connect(hostname) != true)
     {
@@ -60,20 +60,9 @@ DcSocket::~DcSocket()
 
 bool DcSocket::isConnected()
 {
-    if(socket_ == NULL)
-    {
-        put_flog(LOG_ERROR, "socket is NULL");
-
-        return false;
-    }
-    else if(socket_->state() != QAbstractSocket::ConnectedState)
-    {
-        put_flog(LOG_ERROR, "socket is not connected");
-
-        return false;
-    }
-
-    return true;
+    // if the thread is running, we are connected
+    // the thread will exit if there is a connection error
+    return isRunning();
 }
 
 bool DcSocket::queueMessage(QByteArray message)
@@ -84,35 +73,34 @@ bool DcSocket::queueMessage(QByteArray message)
         return false;
     }
 
-    // don't queue new message until the ack for the last message has been received
-    if(firstMessageQueued_ == true)
     {
-        socketWaitForAck();
+        QMutexLocker locker(&sendMessagesQueueMutex_);
+        sendMessagesQueue_.push(message);
     }
-
-    sendMessagesQueue_.push(message);
-
-    // todo: the actual sending / receiving of messages over the socket should happen in another thread (including the ack above)
-    if(socketSendQueuedMessages() != true)
-    {
-        return false;
-    }
-
-    firstMessageQueued_ = true;
 
     return true;
 }
 
+void DcSocket::waitForAck(int count)
+{
+    // only wait if we're connected
+    if(isConnected() != true)
+    {
+        return;
+    }
+
+    ackSemaphore_.acquire(count);
+}
+
 bool DcSocket::connect(const char * hostname)
 {
-    // reset
-    firstMessageQueued_ = false;
+    // make sure we're disconnected
+    disconnect();
 
-    // delete existing socket if we have one
-    if(socket_ != NULL)
-    {
-        delete socket_;
-    }
+    // reset everything
+    sendMessagesQueue_ = std::queue<QByteArray>();
+    ackSemaphore_.acquire(ackSemaphore_.available()); // should reset semaphore to 0
+    disconnectFlag_ = false;
 
     socket_ = new QTcpSocket();
 
@@ -152,6 +140,12 @@ bool DcSocket::connect(const char * hostname)
         return false;
     }
 
+    // move the socket to this thread (which is about to start)
+    socket_->moveToThread(this);
+
+    // start thread execution
+    start();
+
     put_flog(LOG_INFO, "connected to to host %s", hostname);
 
     return true;
@@ -159,52 +153,168 @@ bool DcSocket::connect(const char * hostname)
 
 void DcSocket::disconnect()
 {
-    if(socket_ != NULL)
+    if(isConnected() == true)
     {
-        delete socket_;
-        socket_ = NULL;
+        {
+            QMutexLocker locker(&disconnectFlagMutex_);
+            disconnectFlag_ = true;
+        }
+
+        // wait for thread to finish
+        bool success = wait();
+
+        if(success == false)
+        {
+            put_flog(LOG_ERROR, "thread did not finish");
+        }
     }
 }
 
-bool DcSocket::socketSendQueuedMessages()
+void DcSocket::run()
+{
+    put_flog(LOG_DEBUG, "started");
+
+    while(true)
+    {
+        // exit flag
+        bool exitFlag = false;
+
+        // send a message if available
+        QByteArray sendMessage;
+
+        {
+            QMutexLocker locker(&sendMessagesQueueMutex_);
+
+            if(sendMessagesQueue_.size() > 0)
+            {
+                sendMessage = sendMessagesQueue_.front();
+                sendMessagesQueue_.pop();
+            }
+        }
+
+        if(sendMessage.isEmpty() != true)
+        {
+            bool success = socketSendMessage(sendMessage);
+
+            if(success != true)
+            {
+                put_flog(LOG_ERROR, "error sending message");
+
+                exitFlag = true;
+            }
+        }
+
+        // break here if we had a failure
+        if(exitFlag == true)
+        {
+            break;
+        }
+
+        // receive a message if available
+        if(socket_->waitForReadyRead(1) && socket_->bytesAvailable() >= sizeof(MessageHeader))
+        {
+            MessageHeader messageHeader;
+
+            bool success = socketReceiveMessageHeader(messageHeader);
+
+            if(success == true)
+            {
+                // handle the message
+                if(messageHeader.type == MESSAGE_TYPE_ACK)
+                {
+                    ackSemaphore_.release(1);
+                }
+            }
+            else
+            {
+                put_flog(LOG_ERROR, "error receiving message");
+
+                exitFlag = true;
+            }
+        }
+
+        // make sure the socket is still connected
+        if(socket_->state() != QAbstractSocket::ConnectedState)
+        {
+            put_flog(LOG_ERROR, "socket disconnected");
+
+            exitFlag = true;
+        }
+
+        // break here if we had a failure
+        if(exitFlag == true)
+        {
+            break;
+        }
+
+        // flush the socket
+        socket_->flush();
+
+        // break if disconnect() was called
+        {
+            QMutexLocker locker(&disconnectFlagMutex_);
+
+            if(disconnectFlag_ == true)
+            {
+                break;
+            }
+        }
+    }
+
+    // delete the socket
+    delete socket_;
+    socket_ = NULL;
+
+    put_flog(LOG_DEBUG, "finished");
+}
+
+bool DcSocket::socketSendMessage(QByteArray message)
 {
     if(socket_->state() != QAbstractSocket::ConnectedState)
     {
         return false;
     }
 
-    while(sendMessagesQueue_.size() > 0)
+    char * data = message.data();
+    int size = message.size();
+
+    int sent = socket_->write(data, size);
+
+    while(sent < size && socket_->state() == QAbstractSocket::ConnectedState)
     {
-        QByteArray message = sendMessagesQueue_.front();
-        sendMessagesQueue_.pop();
-
-        char * data = message.data();
-        int size = message.size();
-
-        int sent = socket_->write(data, size);
-
-        while(sent < size && socket_->state() == QAbstractSocket::ConnectedState)
-        {
-            sent += socket_->write(data + sent, size - sent);
-        }
-
-        if(sent != size)
-        {
-            return false;
-        }
+        sent += socket_->write(data + sent, size - sent);
     }
+
+    if(sent != size)
+    {
+        return false;
+    }
+
+    socket_->flush();
 
     return true;
 }
 
-void DcSocket::socketWaitForAck()
+bool DcSocket::socketReceiveMessageHeader(MessageHeader & messageHeader)
 {
-    while(socket_->waitForReadyRead() && socket_->bytesAvailable() < 3)
+    if(socket_->state() != QAbstractSocket::ConnectedState)
     {
-#ifndef _WIN32
-        usleep(10);
-#endif
+        return false;
     }
 
-    socket_->read(3);
+    QByteArray byteArray = socket_->read(sizeof(MessageHeader));
+
+    while(byteArray.size() < (int)sizeof(MessageHeader))
+    {
+        socket_->waitForReadyRead();
+
+        byteArray.append(socket_->read(sizeof(MessageHeader) - byteArray.size()));
+    }
+
+    // got the header
+    messageHeader = *(MessageHeader *)byteArray.data();
+
+    socket_->flush();
+
+    return true;
 }

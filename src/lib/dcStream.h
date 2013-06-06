@@ -92,8 +92,9 @@ extern bool dcStreamSend(DcSocket * socket, unsigned char * imageBuffer, int ima
 extern bool dcStreamSend(DcSocket * socket, unsigned char * imageBuffer, int imageX, int imageY, int imageWidth, int imagePitch, int imageHeight, PIXEL_FORMAT pixelFormat, std::vector<DcStreamParameters> parameters);
 
 // sends a compressed JPEG image corresponding to parameters and sends it to a
-// DisplayCluster instance over socket.
-extern bool dcStreamSendJpeg(DcSocket * socket, DcStreamParameters parameters, const char * jpegData, int jpegSize);
+// DisplayCluster instance over socket. if waitForAck is true, this function
+// will block until an acknowledgment is received.
+extern bool dcStreamSendJpeg(DcSocket * socket, DcStreamParameters parameters, const char * jpegData, int jpegSize, bool waitForAck=true);
 
 // computes a compressed JPEG image corresponding to imageBuffer. results are
 // stored in jpegData and jpegSize.

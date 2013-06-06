@@ -107,13 +107,15 @@ void NetworkListenerThread::run()
         handleMessage(*mh, messageByteArray);
 
         // send acknowledgment
-        const char ack[] = "ack";
+        MessageHeader mhAck;
+        mhAck.size = 0;
+        mhAck.type = MESSAGE_TYPE_ACK;
 
-        int sent = tcpSocket.write(ack, 3);
+        int sent = tcpSocket.write((const char *)&mhAck, sizeof(MessageHeader));
 
-        while(sent < 3)
+        while(sent < sizeof(MessageHeader))
         {
-            sent += tcpSocket.write(ack + sent, 3 - sent);
+            sent += tcpSocket.write((const char *)&mhAck + sent, sizeof(MessageHeader) - sent);
         }
     }
 

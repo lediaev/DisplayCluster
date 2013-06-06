@@ -239,7 +239,7 @@ bool dcStreamSend(DcSocket * socket, unsigned char * imageBuffer, int imageX, in
         }
         else
         {
-            bool sendSuccess = dcStreamSendJpeg(socket, parameters[i], dcImages[i].jpegData, dcImages[i].jpegSize);
+            bool sendSuccess = dcStreamSendJpeg(socket, parameters[i], dcImages[i].jpegData, dcImages[i].jpegSize, false);
 
             if(sendSuccess == false)
             {
@@ -250,10 +250,13 @@ bool dcStreamSend(DcSocket * socket, unsigned char * imageBuffer, int imageX, in
         free(dcImages[i].jpegData);
     }
 
+    // wait for acks for all segments
+    socket->waitForAck(dcImages.size());
+
     return allSuccess;
 }
 
-bool dcStreamSendJpeg(DcSocket * socket, DcStreamParameters parameters, const char * jpegData, int jpegSize)
+bool dcStreamSendJpeg(DcSocket * socket, DcStreamParameters parameters, const char * jpegData, int jpegSize, bool waitForAck)
 {
     if(socket == NULL)
     {
@@ -310,6 +313,12 @@ bool dcStreamSendJpeg(DcSocket * socket, DcStreamParameters parameters, const ch
     if(count(g_dcStreamSourceIndices[parameters.name].begin(), g_dcStreamSourceIndices[parameters.name].end(), parameters.sourceIndex) == 0)
     {
         g_dcStreamSourceIndices[parameters.name].push_back(parameters.sourceIndex);
+    }
+
+    // wait for acknowledgment if requested. this wait can be disabled to buffer all sends before waiting for acknowledgments, for example.
+    if(waitForAck == true)
+    {
+        socket->waitForAck();
     }
 
     return success;
@@ -435,6 +444,8 @@ bool dcStreamSendSVG(DcSocket * socket, std::string name, const char * svgData, 
 
     // queue the message to be sent
     bool success = socket->queueMessage(message);
+
+    socket->waitForAck();
 
     return success;
 }

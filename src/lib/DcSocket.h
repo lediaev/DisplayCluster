@@ -39,12 +39,16 @@
 #ifndef DC_SOCKET_H
 #define DC_SOCKET_H
 
+#include "../MessageHeader.h"
 #include <QtCore>
 #include <queue>
 
 class QTcpSocket;
 
-class DcSocket {
+// we can't use the signal / slot model for handling threads without a Qt event
+// loop. so, we make our own thread class and override run()...
+
+class DcSocket : public QThread {
 
     public:
 
@@ -53,21 +57,37 @@ class DcSocket {
 
         bool isConnected();
 
+        // queue a message to be sent (non-blocking)
         bool queueMessage(QByteArray message);
 
-    private:
+        // wait for count acks to be received
+        void waitForAck(int count=1);
 
-        bool connect(const char * hostname);
-        void disconnect();
-
-        bool socketSendQueuedMessages();
-        void socketWaitForAck();
+    protected:
 
         QTcpSocket * socket_;
 
-        bool firstMessageQueued_;
-
+        // mutex and queue for messages to send
+        QMutex sendMessagesQueueMutex_;
         std::queue<QByteArray> sendMessagesQueue_;
+
+        // semaphore for ack count
+        QSemaphore ackSemaphore_;
+
+        // mutex and flag to trigger socket thread to disconnect
+        QMutex disconnectFlagMutex_;
+        bool disconnectFlag_;
+
+        // socket connections
+        bool connect(const char * hostname);
+        void disconnect();
+
+        // thread execution
+        void run();
+
+        // these are only called in the thread execution
+        bool socketSendMessage(QByteArray message);
+        bool socketReceiveMessageHeader(MessageHeader & messageHeader);
 };
 
 #endif
