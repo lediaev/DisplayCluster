@@ -64,7 +64,7 @@ ContentWindowInterface::ContentWindowInterface(boost::shared_ptr<ContentWindowMa
     qRegisterMetaType<ContentWindowInterface::WindowState>("ContentWindowInterface::WindowState");
 
     // register Interactionstate in Qt
-    qRegisterMetaType<ContentWindowInterface::InteractionState>("ContentWindowInterface::InteractionState");
+    qRegisterMetaType<InteractionState>("InteractionState");
 
     // connect signals from this to slots on the ContentWindowManager
     // use queued connections for thread-safety
@@ -75,7 +75,7 @@ ContentWindowInterface::ContentWindowInterface(boost::shared_ptr<ContentWindowMa
     connect(this, SIGNAL(centerChanged(double, double, ContentWindowInterface *)), contentWindowManager.get(), SLOT(setCenter(double, double, ContentWindowInterface *)), Qt::QueuedConnection);
     connect(this, SIGNAL(zoomChanged(double, ContentWindowInterface *)), contentWindowManager.get(), SLOT(setZoom(double, ContentWindowInterface *)), Qt::QueuedConnection);
     connect(this, SIGNAL(windowStateChanged(ContentWindowInterface::WindowState, ContentWindowInterface *)), contentWindowManager.get(), SLOT(setWindowState(ContentWindowInterface::WindowState, ContentWindowInterface *)), Qt::QueuedConnection);
-    connect(this, SIGNAL(interactionStateChanged(ContentWindowInterface::InteractionState, ContentWindowInterface *)), contentWindowManager.get(), SLOT(setInteractionState(ContentWindowInterface::InteractionState, ContentWindowInterface *)), Qt::QueuedConnection);
+    connect(this, SIGNAL(interactionStateChanged(InteractionState, ContentWindowInterface *)), contentWindowManager.get(), SLOT(setInteractionState(InteractionState, ContentWindowInterface *)), Qt::QueuedConnection);
     connect(this, SIGNAL(highlighted(ContentWindowInterface *)), contentWindowManager.get(), SLOT(highlight(ContentWindowInterface *)), Qt::QueuedConnection);
     connect(this, SIGNAL(movedToFront(ContentWindowInterface *)), contentWindowManager.get(), SLOT(moveToFront(ContentWindowInterface *)), Qt::QueuedConnection);
     connect(this, SIGNAL(closed(ContentWindowInterface *)), contentWindowManager.get(), SLOT(close(ContentWindowInterface *)), Qt::QueuedConnection);
@@ -89,7 +89,7 @@ ContentWindowInterface::ContentWindowInterface(boost::shared_ptr<ContentWindowMa
     connect(contentWindowManager.get(), SIGNAL(centerChanged(double, double, ContentWindowInterface *)), this, SLOT(setCenter(double, double, ContentWindowInterface *)), Qt::QueuedConnection);
     connect(contentWindowManager.get(), SIGNAL(zoomChanged(double, ContentWindowInterface *)), this, SLOT(setZoom(double, ContentWindowInterface *)), Qt::QueuedConnection);
     connect(contentWindowManager.get(), SIGNAL(windowStateChanged(ContentWindowInterface::WindowState, ContentWindowInterface *)), this, SLOT(setWindowState(ContentWindowInterface::WindowState, ContentWindowInterface *)), Qt::QueuedConnection);
-    connect(contentWindowManager.get(), SIGNAL(interactionStateChanged(ContentWindowInterface::InteractionState, ContentWindowInterface *)), this, SLOT(setInteractionState(ContentWindowInterface::InteractionState, ContentWindowInterface *)), Qt::QueuedConnection);
+    connect(contentWindowManager.get(), SIGNAL(interactionStateChanged(InteractionState, ContentWindowInterface *)), this, SLOT(setInteractionState(InteractionState, ContentWindowInterface *)), Qt::QueuedConnection);
     connect(contentWindowManager.get(), SIGNAL(highlighted(ContentWindowInterface *)), this, SLOT(highlight(ContentWindowInterface *)), Qt::QueuedConnection);
     connect(contentWindowManager.get(), SIGNAL(movedToFront(ContentWindowInterface *)), this, SLOT(moveToFront(ContentWindowInterface *)), Qt::QueuedConnection);
     connect(contentWindowManager.get(), SIGNAL(closed(ContentWindowInterface *)), this, SLOT(close(ContentWindowInterface *)), Qt::QueuedConnection);
@@ -145,7 +145,7 @@ ContentWindowInterface::WindowState ContentWindowInterface::getWindowState()
     return windowState_;
 }
 
-ContentWindowInterface::InteractionState ContentWindowInterface::getInteractionState()
+InteractionState ContentWindowInterface::getInteractionState()
 {
     return interactionState_;
 }
@@ -480,7 +480,7 @@ void ContentWindowInterface::setWindowState(ContentWindowInterface::WindowState 
     }
 }
 
-void ContentWindowInterface::setInteractionState(ContentWindowInterface::InteractionState interactionState, ContentWindowInterface * source)
+void ContentWindowInterface::setInteractionState(InteractionState interactionState, ContentWindowInterface * source)
 {
     if(source == this)
     {

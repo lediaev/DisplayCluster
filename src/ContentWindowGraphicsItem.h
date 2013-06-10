@@ -61,7 +61,7 @@ class ContentWindowGraphicsItem : public QGraphicsRectItem, public ContentWindow
         void setCenter(double centerX, double centerY, ContentWindowInterface * source=NULL);
         void setZoom(double zoom, ContentWindowInterface * source=NULL);
         void setWindowState(ContentWindowInterface::WindowState windowState, ContentWindowInterface * source=NULL);
-        void setInteractionState(ContentWindowInterface::InteractionState interactionState, ContentWindowInterface * source=NULL);
+        void setInteractionState(InteractionState interactionState, ContentWindowInterface * source=NULL);
 
         // increment the Z value of this item
         void setZToFront();

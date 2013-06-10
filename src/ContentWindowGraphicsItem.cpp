@@ -151,12 +151,12 @@ void ContentWindowGraphicsItem::paint(QPainter * painter, const QStyleOptionGrap
 
         QString coordinatesLabel = QString(" (") + QString::number(x_, 'f', 2) + QString(" ,") + QString::number(y_, 'f', 2) + QString(", ") + QString::number(w_, 'f', 2) + QString(", ") + QString::number(h_, 'f', 2) + QString(")\n");
         QString zoomCenterLabel = QString(" zoom = ") + QString::number(zoom_, 'f', 2) + QString(" @ (") + QString::number(centerX_, 'f', 2) + QString(", ") + QString::number(centerY_, 'f', 2) + QString(")");
-        QString interactionLabel = QString(" x: ") + 
-                QString::number(interactionState_.mouseX_, 'f', 2) + 
-                QString(" y: ") + QString::number(interactionState_.mouseY_, 'f', 2) + 
-                QString(" mouseLeft: ") + QString::number((int) interactionState_.mouseLeft_, 'b', 1) + 
-                QString(" mouseMiddle: ") + QString::number((int) interactionState_.mouseMiddle_, 'b', 1) + 
-                QString(" mouseRight: ") + QString::number((int) interactionState_.mouseRight_, 'b', 1);
+        QString interactionLabel = QString(" x: ") +
+                QString::number(interactionState_.mouseX, 'f', 2) +
+                QString(" y: ") + QString::number(interactionState_.mouseY, 'f', 2) +
+                QString(" mouseLeft: ") + QString::number((int) interactionState_.mouseLeft, 'b', 1) +
+                QString(" mouseMiddle: ") + QString::number((int) interactionState_.mouseMiddle, 'b', 1) +
+                QString(" mouseRight: ") + QString::number((int) interactionState_.mouseRight, 'b', 1);
 
         QString windowInfoLabel = coordinatesLabel + zoomCenterLabel + interactionLabel;
         painter->drawText(textBoundingRect, Qt::AlignLeft | Qt::AlignBottom, windowInfoLabel);
@@ -251,7 +251,7 @@ void ContentWindowGraphicsItem::setWindowState(ContentWindowInterface::WindowSta
     }
 }
 
-void ContentWindowGraphicsItem::setInteractionState(ContentWindowInterface::InteractionState interactionState, ContentWindowInterface * source)
+void ContentWindowGraphicsItem::setInteractionState(InteractionState interactionState, ContentWindowInterface * source)
 {
     ContentWindowInterface::setInteractionState(interactionState, source);
 
@@ -346,12 +346,12 @@ void ContentWindowGraphicsItem::mouseMoveEvent(QGraphicsSceneMouseEvent * event)
 
         InteractionState interactionState = interactionState_;
 
-        interactionState.mouseX_ = (eventPos.x() - r.x()) / r.width();
-        interactionState.mouseY_ = (eventPos.y() - r.y()) / r.height();
+        interactionState.mouseX = (eventPos.x() - r.x()) / r.width();
+        interactionState.mouseY = (eventPos.y() - r.y()) / r.height();
 
-        interactionState.mouseLeft_ = event->buttons().testFlag(Qt::LeftButton);
-        interactionState.mouseMiddle_ = event->buttons().testFlag(Qt::MiddleButton);
-        interactionState.mouseRight_ = event->buttons().testFlag(Qt::RightButton);
+        interactionState.mouseLeft = event->buttons().testFlag(Qt::LeftButton);
+        interactionState.mouseMiddle = event->buttons().testFlag(Qt::MiddleButton);
+        interactionState.mouseRight = event->buttons().testFlag(Qt::RightButton);
 
         setInteractionState(interactionState);
 

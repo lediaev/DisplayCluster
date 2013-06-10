@@ -42,12 +42,29 @@
 #define HIGHLIGHT_TIMEOUT_MILLISECONDS 1500
 #define HIGHLIGHT_BLINK_INTERVAL 250 // milliseconds
 
+#include "InteractionState.h"
 #include <QtGui>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 class ContentWindowManager;
+
+// allow serialization of InteractionState
+namespace boost {
+    namespace serialization {
+
+        template<class Archive>
+        void serialize(Archive & ar, InteractionState & is, const unsigned int version)
+        {
+            ar & is.mouseX;
+            ar & is.mouseY;
+            ar & is.mouseLeft;
+            ar & is.mouseRight;
+            ar & is.mouseMiddle;
+        }
+    }
+}
 
 class ContentWindowInterface : public QObject {
     Q_OBJECT
@@ -58,28 +75,6 @@ class ContentWindowInterface : public QObject {
             UNSELECTED,   // the window is not selected and interaction changes its position/size
             SELECTED,     // the window is selected and interaction modifies its zoom/pan
             INTERACTION   // interaction within the window may be forwarded to the content source
-        };
-
-        // the state of interaction within the window (mouse emulation)
-        struct InteractionState {
-            double mouseX_, mouseY_;
-            bool mouseLeft_, mouseRight_, mouseMiddle_;
-
-            InteractionState()
-            {
-                mouseX_ = mouseY_ = 0.;
-                mouseLeft_ = mouseRight_ = mouseMiddle_ = false;
-            }
-
-            template <typename Archive>
-            void serialize(Archive & ar, const unsigned int version)
-            {
-                ar & mouseX_;
-                ar & mouseY_;
-                ar & mouseLeft_;
-                ar & mouseRight_;
-                ar & mouseMiddle_;
-            }
         };
 
         ContentWindowInterface() { }
@@ -95,7 +90,7 @@ class ContentWindowInterface : public QObject {
         double getZoom();
         bool getHighlighted();
         ContentWindowInterface::WindowState getWindowState();
-        ContentWindowInterface::InteractionState getInteractionState();
+        InteractionState getInteractionState();
 
         // button dimensions
         void getButtonDimensions(float &width, float &height);
@@ -117,7 +112,7 @@ class ContentWindowInterface : public QObject {
         virtual void setZoom(double zoom, ContentWindowInterface * source=NULL);
         virtual void highlight(ContentWindowInterface * source=NULL);
         virtual void setWindowState(ContentWindowInterface::WindowState windowState, ContentWindowInterface * source=NULL);
-        virtual void setInteractionState(ContentWindowInterface::InteractionState interactionState, ContentWindowInterface * source=NULL);
+        virtual void setInteractionState(InteractionState interactionState, ContentWindowInterface * source=NULL);
         virtual void moveToFront(ContentWindowInterface * source=NULL);
         virtual void close(ContentWindowInterface * source=NULL);
 
@@ -133,7 +128,7 @@ class ContentWindowInterface : public QObject {
         void zoomChanged(double zoom, ContentWindowInterface * source);
         void highlighted(ContentWindowInterface * source);
         void windowStateChanged(ContentWindowInterface::WindowState windowState, ContentWindowInterface * source);
-        void interactionStateChanged(ContentWindowInterface::InteractionState interactionState, ContentWindowInterface * source);
+        void interactionStateChanged(InteractionState interactionState, ContentWindowInterface * source);
         void movedToFront(ContentWindowInterface * source);
         void closed(ContentWindowInterface * source);
 
@@ -162,7 +157,7 @@ class ContentWindowInterface : public QObject {
         ContentWindowInterface::WindowState windowState_;
 
         // interaction state
-        ContentWindowInterface::InteractionState interactionState_;
+        InteractionState interactionState_;
 
         // highlighted timestamp
         boost::posix_time::ptime highlightedTimestamp_;
