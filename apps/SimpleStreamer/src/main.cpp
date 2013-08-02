@@ -129,8 +129,12 @@ void syntax(char * app)
 
 void display()
 {
-    // angle of camera rotation
-    static float angle = 0;
+    // angles of camera rotation
+    static float angleX = 0.;
+    static float angleY = 0.;
+
+    // zoom factor
+    static float zoom = 1.;
 
     // clear color / depth buffers and setup view
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -144,7 +148,10 @@ void display()
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    glRotatef(angle, 0.0, 1.0, 1.0);
+    glRotatef(angleX, 0.0, 1.0, 0.0);
+    glRotatef(angleY, -1.0, 0.0, 0.0);
+
+    glScalef(zoom, zoom, zoom);
 
     // render the teapot
     glutSolidTeapot(1.);
@@ -196,18 +203,30 @@ void display()
     if(dcInteraction == true)
     {
         static float mouseX = 0.;
+        static float mouseY = 0.;
 
         InteractionState interactionState = dcStreamGetInteractionState(dcSocket);
 
         float newMouseX = interactionState.mouseX;
+        float newMouseY = interactionState.mouseY;
 
-        angle += (newMouseX - mouseX) * 360.;
+        if(interactionState.mouseLeft == true)
+        {
+            angleX += (newMouseX - mouseX) * 360.;
+            angleY += (newMouseY - mouseY) * 360.;
+        }
+        else if(interactionState.mouseRight == true)
+        {
+            zoom += (newMouseY - mouseY);
+        }
 
         mouseX = newMouseX;
+        mouseY = newMouseY;
     }
     else
     {
-        angle += 1.;
+        angleX += 1.;
+        angleY += 1.;
     }
 }
 
