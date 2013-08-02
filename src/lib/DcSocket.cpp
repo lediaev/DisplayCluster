@@ -86,10 +86,19 @@ void DcSocket::waitForAck(int count)
     // only wait if we're connected
     if(isConnected() != true)
     {
+        put_flog(LOG_WARN, "not connected");
+
         return;
     }
 
     ackSemaphore_.acquire(count);
+}
+
+InteractionState DcSocket::getInteractionState()
+{
+    QMutexLocker locker(&interactionStateMutex_);
+
+    return interactionState_;
 }
 
 bool DcSocket::connect(const char * hostname)
@@ -117,9 +126,14 @@ bool DcSocket::connect(const char * hostname)
         return false;
     }
 
+    // todo: we need to consider the performance of the low delay option
+    // socket_->setSocketOption(QAbstractSocket::LowDelayOption, 1);
+
     // handshake
-    while(socket_->waitForReadyRead() && socket_->bytesAvailable() < (int)sizeof(int32_t))
+    while(socket_->bytesAvailable() < (int)sizeof(int32_t))
     {
+        socket_->waitForReadyRead();
+
     #ifndef _WIN32
         usleep(10);
     #endif
@@ -211,11 +225,14 @@ void DcSocket::run()
         }
 
         // receive a message if available
-        if(socket_->waitForReadyRead(1) && socket_->bytesAvailable() >= sizeof(MessageHeader))
+        socket_->waitForReadyRead(1);
+
+        if(socket_->bytesAvailable() >= sizeof(MessageHeader))
         {
             MessageHeader messageHeader;
+            QByteArray message;
 
-            bool success = socketReceiveMessageHeader(messageHeader);
+            bool success = socketReceiveMessage(messageHeader, message);
 
             if(success == true)
             {
@@ -223,6 +240,15 @@ void DcSocket::run()
                 if(messageHeader.type == MESSAGE_TYPE_ACK)
                 {
                     ackSemaphore_.release(1);
+                }
+                else if(messageHeader.type == MESSAGE_TYPE_INTERACTION)
+                {
+                    QMutexLocker locker(&interactionStateMutex_);
+                    interactionState_ = *(InteractionState *)(message.data());
+                }
+                else
+                {
+                    put_flog(LOG_ERROR, "unknown message header type");
                 }
             }
             else
@@ -292,10 +318,15 @@ bool DcSocket::socketSendMessage(QByteArray message)
 
     socket_->flush();
 
+    while(socket_->bytesToWrite() > 0)
+    {
+        socket_->waitForBytesWritten();
+    }
+
     return true;
 }
 
-bool DcSocket::socketReceiveMessageHeader(MessageHeader & messageHeader)
+bool DcSocket::socketReceiveMessage(MessageHeader & messageHeader, QByteArray & message)
 {
     if(socket_->state() != QAbstractSocket::ConnectedState)
     {
@@ -314,7 +345,18 @@ bool DcSocket::socketReceiveMessageHeader(MessageHeader & messageHeader)
     // got the header
     messageHeader = *(MessageHeader *)byteArray.data();
 
-    socket_->flush();
+    // get the message
+    if(messageHeader.size > 0)
+    {
+        message = socket_->read(messageHeader.size);
+
+        while(message.size() < messageHeader.size)
+        {
+            socket_->waitForReadyRead();
+
+            message.append(socket_->read(messageHeader.size - message.size()));
+        }
+    }
 
     return true;
 }

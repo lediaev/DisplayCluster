@@ -239,6 +239,16 @@ void DisplayGroupManager::calibrateTimestampOffset()
     }
 }
 
+boost::shared_ptr<DisplayGroupInterface> DisplayGroupManager::getDisplayGroupInterface(QThread * thread)
+{
+    boost::shared_ptr<DisplayGroupInterface> dgi(new DisplayGroupInterface(shared_from_this()));
+
+    // push it to the other thread
+    dgi.get()->moveToThread(thread);
+
+    return dgi;
+}
+
 bool DisplayGroupManager::saveStateXMLFile(std::string filename)
 {
     // get contents vector

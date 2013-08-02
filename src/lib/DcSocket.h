@@ -40,6 +40,7 @@
 #define DC_SOCKET_H
 
 #include "../MessageHeader.h"
+#include "../InteractionState.h"
 #include <QtCore>
 #include <queue>
 
@@ -63,6 +64,8 @@ class DcSocket : public QThread {
         // wait for count acks to be received
         void waitForAck(int count=1);
 
+        InteractionState getInteractionState();
+
     protected:
 
         QTcpSocket * socket_;
@@ -78,6 +81,10 @@ class DcSocket : public QThread {
         QMutex disconnectFlagMutex_;
         bool disconnectFlag_;
 
+        // current interaction state
+        QMutex interactionStateMutex_;
+        InteractionState interactionState_;
+
         // socket connections
         bool connect(const char * hostname);
         void disconnect();
@@ -87,7 +94,7 @@ class DcSocket : public QThread {
 
         // these are only called in the thread execution
         bool socketSendMessage(QByteArray message);
-        bool socketReceiveMessageHeader(MessageHeader & messageHeader);
+        bool socketReceiveMessage(MessageHeader & messageHeader, QByteArray & message);
 };
 
 #endif

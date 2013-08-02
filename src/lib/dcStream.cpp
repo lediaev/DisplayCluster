@@ -450,6 +450,56 @@ bool dcStreamSendSVG(DcSocket * socket, std::string name, const char * svgData, 
     return success;
 }
 
+bool dcStreamBindInteraction(DcSocket * socket, std::string name)
+{
+    if(socket == NULL)
+    {
+        put_flog(LOG_ERROR, "socket is NULL");
+
+        return false;
+    }
+
+    if(socket->isConnected() != true)
+    {
+        put_flog(LOG_ERROR, "socket is not connected");
+
+        return false;
+    }
+
+    // this byte array will hold the entire message to be sent over the socket
+    QByteArray message;
+
+    // the message header
+    MessageHeader mh;
+    mh.size = 0;
+    mh.type = MESSAGE_TYPE_BIND_INTERACTION;
+
+    // add the truncated URI to the header
+    size_t len = name.copy(mh.uri, MESSAGE_HEADER_URI_LENGTH - 1);
+    mh.uri[len] = '\0';
+
+    message.append((const char *)&mh, sizeof(MessageHeader));
+
+    // queue the message to be sent
+    bool success = socket->queueMessage(message);
+
+    socket->waitForAck();
+
+    return success;
+}
+
+InteractionState dcStreamGetInteractionState(DcSocket * socket)
+{
+    if(socket == NULL)
+    {
+        put_flog(LOG_ERROR, "socket is NULL");
+
+        return InteractionState();
+    }
+
+    return socket->getInteractionState();
+}
+
 DcImage dcStreamComputeJpegMapped(const DcImage & dcImage)
 {
     DcImage newDcImage = dcImage;

@@ -39,6 +39,7 @@
 #ifndef DC_STREAM_H
 #define DC_STREAM_H
 
+#include "../InteractionState.h"
 #include <string>
 #include <vector>
 
@@ -108,5 +109,9 @@ extern void dcStreamIncrementFrameIndex();
 // socket. different from the pixel streaming capability, this allows for
 // streaming vector-based graphics.
 extern bool dcStreamSendSVG(DcSocket * socket, std::string name, const char * svgData, int svgSize);
+
+extern bool dcStreamBindInteraction(DcSocket * socket, std::string name);
+
+extern InteractionState dcStreamGetInteractionState(DcSocket * socket);
 
 #endif
