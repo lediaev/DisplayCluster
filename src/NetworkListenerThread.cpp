@@ -49,6 +49,7 @@ NetworkListenerThread::NetworkListenerThread(int socketDescriptor)
 {
     // defaults
     tcpSocket_ = NULL;
+    interactionBound_ = false;
     updatedInteractionState_ = false;
 
     // assign values
@@ -119,6 +120,14 @@ void NetworkListenerThread::process()
     if(tcpSocket_->bytesAvailable() >= (int)sizeof(MessageHeader))
     {
         socketReceiveMessage();
+
+        // if we tried and failed to bind interaction events, try again... maybe the window was created after this new message
+        if(interactionName_.empty() != true && interactionBound_ == false)
+        {
+            put_flog(LOG_DEBUG, "attempting to bind interaction events again...");
+
+            interactionBound_ = bindInteraction();
+        }
     }
 
     // send messages if needed
@@ -261,25 +270,32 @@ void NetworkListenerThread::handleMessage(MessageHeader messageHeader, QByteArra
 
         interactionName_ = uri;
 
-        // try to bind to the ContentWindowManager corresponding to interactionName
-        boost::shared_ptr<ContentWindowManager> cwm = displayGroupInterface_->getContentWindowManager(interactionName_);
+        interactionBound_ = bindInteraction();
+    }
+}
 
-        if(cwm != NULL)
-        {
-            put_flog(LOG_DEBUG, "found window");
+bool NetworkListenerThread::bindInteraction()
+{
+    // try to bind to the ContentWindowManager corresponding to interactionName
+    boost::shared_ptr<ContentWindowManager> cwm = displayGroupInterface_->getContentWindowManager(interactionName_);
 
-            // todo: disconnect any existing signal connections to the setInteractionState() slot
-            // in case we're binding to another window in the same connection / socket
+    if(cwm != NULL)
+    {
+        put_flog(LOG_DEBUG, "found window");
 
-            // make connection to get interaction updates
-            connect(cwm.get(), SIGNAL(interactionStateChanged(InteractionState, ContentWindowInterface *)), this, SLOT(setInteractionState(InteractionState)), Qt::QueuedConnection);
-        }
-        else
-        {
-            put_flog(LOG_WARN, "could not find window");
-        }
+        // todo: disconnect any existing signal connections to the setInteractionState() slot
+        // in case we're binding to another window in the same connection / socket
 
-        // todo: need to handle if window doesn't exist yet!
+        // make connection to get interaction updates
+        connect(cwm.get(), SIGNAL(interactionStateChanged(InteractionState, ContentWindowInterface *)), this, SLOT(setInteractionState(InteractionState)), Qt::QueuedConnection);
+
+        return true;
+    }
+    else
+    {
+        put_flog(LOG_WARN, "could not find window");
+
+        return false;
     }
 }
 

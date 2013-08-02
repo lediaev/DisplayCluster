@@ -80,6 +80,7 @@ class NetworkListenerThread : public QObject {
         boost::shared_ptr<DisplayGroupInterface> displayGroupInterface_;
 
         std::string interactionName_;
+        bool interactionBound_;
 
         // interaction state information
         // right now we only keep track of the latest state, but we could queue these up later if needed...
@@ -88,6 +89,7 @@ class NetworkListenerThread : public QObject {
 
         void handleMessage(MessageHeader messageHeader, QByteArray byteArray);
 
+        bool bindInteraction();
         void sendInteractionState();
 };
 
