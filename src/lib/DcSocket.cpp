@@ -227,7 +227,7 @@ void DcSocket::run()
         // receive a message if available
         socket_->waitForReadyRead(1);
 
-        if(socket_->bytesAvailable() >= sizeof(MessageHeader))
+        if(socket_->bytesAvailable() >= (int)sizeof(MessageHeader))
         {
             MessageHeader messageHeader;
             QByteArray message;

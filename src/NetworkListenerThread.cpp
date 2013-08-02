@@ -116,7 +116,7 @@ void NetworkListenerThread::process()
     // receive a message if available
     tcpSocket_->waitForReadyRead(1);
 
-    if(tcpSocket_->bytesAvailable() >= sizeof(MessageHeader))
+    if(tcpSocket_->bytesAvailable() >= (int)sizeof(MessageHeader))
     {
         socketReceiveMessage();
     }
@@ -176,7 +176,7 @@ void NetworkListenerThread::socketReceiveMessage()
 
     int sent = tcpSocket_->write((const char *)&mhAck, sizeof(MessageHeader));
 
-    while(sent < sizeof(MessageHeader))
+    while(sent < (int)sizeof(MessageHeader))
     {
         sent += tcpSocket_->write((const char *)&mhAck + sent, sizeof(MessageHeader) - sent);
     }
@@ -292,7 +292,7 @@ void NetworkListenerThread::sendInteractionState()
 
     int sent = tcpSocket_->write((const char *)&mh, sizeof(MessageHeader));
 
-    while(sent < sizeof(MessageHeader))
+    while(sent < (int)sizeof(MessageHeader))
     {
         sent += tcpSocket_->write((const char *)&mh + sent, sizeof(MessageHeader) - sent);
     }
@@ -300,7 +300,7 @@ void NetworkListenerThread::sendInteractionState()
     // send interaction state
     sent = tcpSocket_->write((const char *)&interactionState_, sizeof(InteractionState));
 
-    while(sent < sizeof(InteractionState))
+    while(sent < (int)sizeof(InteractionState))
     {
         sent += tcpSocket_->write((const char *)&interactionState_ + sent, sizeof(InteractionState) - sent);
     }
