@@ -105,6 +105,10 @@ extern bool dcStreamComputeJpeg(unsigned char * imageBuffer, int width, int pitc
 // used for frame synchronization.
 extern void dcStreamIncrementFrameIndex();
 
+// set the frame index for all segments sent by this process. this is used for
+// frame synchronization.
+extern void dcStreamSetFrameIndex(int frameIndex);
+
 // sends an SVG image with a given name to a DisplayCluster instance over a
 // socket. different from the pixel streaming capability, this allows for
 // streaming vector-based graphics.

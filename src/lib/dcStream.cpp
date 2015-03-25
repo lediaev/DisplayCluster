@@ -406,6 +406,11 @@ void dcStreamIncrementFrameIndex()
     g_dcStreamFrameIndex++;
 }
 
+void dcStreamSetFrameIndex(int frameIndex)
+{
+    g_dcStreamFrameIndex = frameIndex;
+}
+
 bool dcStreamSendSVG(DcSocket * socket, std::string name, const char * svgData, int svgSize)
 {
     if(socket == NULL)
