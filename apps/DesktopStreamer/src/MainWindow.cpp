@@ -115,8 +115,8 @@ MainWindow::MainWindow()
     // default to the upper-left quadrant of the screen
     xSpinBox_.setValue(0);
     ySpinBox_.setValue(0);
-    widthSpinBox_.setValue(desktopRect.width() / 2);
-    heightSpinBox_.setValue(desktopRect.height() / 2);
+    widthSpinBox_.setValue(desktopRect.width());
+    heightSpinBox_.setValue(desktopRect.height());
 
     // call updateCoordinates() to commit coordinates from the UI
     updateCoordinates();
