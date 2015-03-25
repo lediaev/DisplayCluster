@@ -322,7 +322,7 @@ void DynamicTexture::render(float tX, float tY, float tW, float tH, bool compute
             // each DynamicTexture tree is limited to (maxThreads - 2) threads, where the max is determined by the global QThreadPool instance
             // we increase responsiveness / interactivity by not queuing up image loading
             // todo: this doesn't perform well with too many threads; restricting to 1 thread for now
-            int maxThreads = 1; // std::max(QThreadPool::globalInstance()->maxThreadCount() - 2, 1);
+            int maxThreads = std::max(QThreadPool::globalInstance()->maxThreadCount() - 2, 1);
 
             if(getThreadCount() < maxThreads)
             {
