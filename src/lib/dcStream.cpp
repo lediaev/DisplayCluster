@@ -187,7 +187,7 @@ bool dcStreamSend(DcSocket * socket, unsigned char * imageBuffer, int imageX, in
         return false;
     }
 
-    success = dcStreamSendJpeg(socket, parameters, jpegData, jpegSize);
+    success = dcStreamSendJpeg(socket, parameters, jpegData, jpegSize, false);
 
     free(jpegData);
     return success;
