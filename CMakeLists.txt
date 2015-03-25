@@ -243,7 +243,10 @@ if(BUILD_DISPLAYCLUSTER_LIBRARY)
 
     set(DISPLAYCLUSTER_LIBRARY_PUBLIC_HEADERS
         src/lib/dcStream.h
+        src/InteractionState.h
     )
+
+    include_directories(src/)
 
     # build as a static library on Apple platforms, shared on others
     # RPATH seems to have trouble on Apple...
