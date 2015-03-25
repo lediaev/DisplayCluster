@@ -137,7 +137,7 @@ void JoystickThread::updateJoysticks()
             button4 = SDL_JoystickGetButton(joysticks_[index], 6);
             button5 = SDL_JoystickGetButton(joysticks_[index], 7);
         }
-        else if(states_[index].name.contains("Xbox") == true)
+        else if(states_[index].name.contains("Xbox") == true || states_[index].name.contains("X-Box") == true)
         {
             axis1 = SDL_JoystickGetAxis(joysticks_[index], 1);
             axis2 = SDL_JoystickGetAxis(joysticks_[index], 0);
