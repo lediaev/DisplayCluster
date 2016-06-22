@@ -44,6 +44,8 @@
 #include <QtCore>
 #include <queue>
 
+#include <iostream>
+
 class QTcpSocket;
 
 // we can't use the signal / slot model for handling threads without a Qt event

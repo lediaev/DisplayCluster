@@ -42,6 +42,7 @@
 #include <mpi.h>
 #include <unistd.h>
 
+
 #if ENABLE_TUIO_TOUCH_LISTENER
     #include "TouchListener.h"
     #include <X11/Xlib.h>
@@ -71,6 +72,9 @@ long g_frameCount = 0;
 int main(int argc, char * argv[])
 {
     put_flog(LOG_INFO, "");
+
+    std::cout << "trying to connect to host ";
+   // exit(-1);
 
     // get base directory
     if(getenv("DISPLAYCLUSTER_DIR") == NULL)

@@ -73,6 +73,11 @@ DcSocket * dcStreamConnect(const char * hostname)
 {
     DcSocket * dcSocket = new DcSocket(hostname);
 
+
+
+    std::cout << "LEDIAEV dcStreamConnect: trying to connect to host " << hostname << "\n";
+
+
     if(dcSocket->isConnected() != true)
     {
         delete dcSocket;

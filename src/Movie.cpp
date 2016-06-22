@@ -140,10 +140,14 @@ Movie::Movie(std::string uri)
     textureBound_ = true;
 
     // allocate video frame for video decoding
-    avFrame_ = avcodec_alloc_frame();
+    // LEDIAEV
+    avFrame_ = av_frame_alloc();
+    //avFrame_ = avcodec_alloc_frame();
 
     // allocate video frame for RGB conversion
-    avFrameRGB_ = avcodec_alloc_frame();
+    // LEDIAEV
+    avFrameRGB_ = av_frame_alloc();
+    //avFrameRGB_ = avcodec_alloc_frame();
 
     if(avFrame_ == NULL || avFrameRGB_ == NULL)
     {
@@ -153,14 +157,14 @@ Movie::Movie(std::string uri)
 
     // get required buffer size and allocate buffer for pFrameRGB
     // this memory will be overwritten during frame conversion, but needs to be allocated ahead of time
-    int numBytes = avpicture_get_size(PIX_FMT_RGBA, avCodecContext_->width, avCodecContext_->height);
+    int numBytes = avpicture_get_size(AV_PIX_FMT_RGBA, avCodecContext_->width, avCodecContext_->height);
     uint8_t * buffer = (uint8_t *)av_malloc(numBytes*sizeof(uint8_t));
 
     // assign buffer to pFrameRGB
-    avpicture_fill((AVPicture *)avFrameRGB_, buffer, PIX_FMT_RGBA, avCodecContext_->width, avCodecContext_->height);
+    avpicture_fill((AVPicture *)avFrameRGB_, buffer, AV_PIX_FMT_RGBA, avCodecContext_->width, avCodecContext_->height);
 
     // create sws scaler context
-    swsContext_ = sws_getContext(avCodecContext_->width, avCodecContext_->height, avCodecContext_->pix_fmt, avCodecContext_->width, avCodecContext_->height, PIX_FMT_RGBA, SWS_FAST_BILINEAR, NULL, NULL, NULL);
+    swsContext_ = sws_getContext(avCodecContext_->width, avCodecContext_->height, avCodecContext_->pix_fmt, avCodecContext_->width, avCodecContext_->height, AV_PIX_FMT_RGBA, SWS_FAST_BILINEAR, NULL, NULL, NULL);
 
     initialized_ = true;
 }
@@ -175,7 +179,9 @@ Movie::~Movie()
     }
 
     // close the format context
-    av_close_input_file(avFormatContext_);
+    // LEDIAEV
+    //av_close_input_file(avFormatContext_);
+    avformat_close_input(&avFormatContext_);;
 
     // free scaler context
     sws_freeContext(swsContext_);

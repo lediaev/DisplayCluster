@@ -7,21 +7,24 @@ set(VERSION_MAJOR 0)
 set(VERSION_MINOR 1)
 set(VERSION_PATCH 0)
 
+SET(CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo")
+
 # required for mixing libraries with full paths and not...
 if(COMMAND cmake_policy)
     cmake_policy(SET CMP0003 NEW)
 endif(COMMAND cmake_policy)
 
 # show all warnings
-set(CMAKE_CXX_FLAGS "-Wall")
+# set(CMAKE_CXX_FLAGS "-Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 
 # keep the library path in installed executables
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # build options
-option(BUILD_DISPLAYCLUSTER "Build main DisplayCluster application" OFF)
-option(BUILD_DISPLAYCLUSTER_LIBRARY "Build DisplayCluster library" OFF)
-option(BUILD_DESKTOPSTREAMER "Build DesktopStreamer application" OFF)
+option(BUILD_DISPLAYCLUSTER "Build main DisplayCluster application" ON)
+option(BUILD_DISPLAYCLUSTER_LIBRARY "Build DisplayCluster library" ON)
+option(BUILD_DESKTOPSTREAMER "Build DesktopStreamer application" ON)
 
 if(BUILD_DISPLAYCLUSTER)
     option(ENABLE_TUIO_TOUCH_LISTENER "Enable TUIO touch listener for multi-touch events" OFF)
@@ -211,8 +214,8 @@ if(BUILD_DISPLAYCLUSTER)
     )
 
     # install launchers
-    INSTALL(PROGRAMS examples/startdisplaycluster DESTINATION bin)
-    INSTALL(PROGRAMS examples/displaycluster.py DESTINATION bin)
+    #INSTALL(PROGRAMS examples/startdisplaycluster DESTINATION bin)
+    #INSTALL(PROGRAMS examples/displaycluster.py DESTINATION bin)
 
     # install data files
     INSTALL(DIRECTORY data DESTINATION .)
