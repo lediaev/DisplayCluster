@@ -1,22 +1,48 @@
-project(DisplayCluster)
+##========================================================
+## TACC Display Cluster                                 ##
+##                                                      ##
+##========================================================
 
-cmake_minimum_required(VERSION 2.4.0)
+PROJECT(DisplayCluster)
 
-# version information
-set(VERSION_MAJOR 0)
-set(VERSION_MINOR 1)
-set(VERSION_PATCH 0)
-
-SET(CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo")
+CMAKE_MINIMUM_REQUIRED(VERSION 2.4.0)
 
 # required for mixing libraries with full paths and not...
 if(COMMAND cmake_policy)
     cmake_policy(SET CMP0003 NEW)
 endif(COMMAND cmake_policy)
 
+# path for additional modules
+# set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake/modules)
+
+# version information
+set(VERSION_MAJOR 0)
+set(VERSION_MINOR 1)
+set(VERSION_PATCH 0)
+
+SET(CONFIGURATION_TYPES "Debug;Release")
+
+IF(NOT CMAKE_BUILD_TYPE)
+    SET(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the build type." FORCE)
+    SET_PROPERTY(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${CONFIGURATION_TYPES})
+ENDIF()
+
+
+
 # show all warnings
-# set(CMAKE_CXX_FLAGS "-Wall")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+# SET(CMAKE_CXX_FLAGS       "${CMAKE_CXX_FLAGS} -Wall -std=c++11")
+SET(CMAKE_CXX_FLAGS                "${CMAKE_CXX_FLAGS} -fPIC -fno-strict-aliasing  -std=c++11 -Wno-narrowing")
+SET(CMAKE_CXX_FLAGS_DEBUG          "-DDEBUG  -g     -Wstrict-aliasing=1")
+SET(CMAKE_CXX_FLAGS_RELEASE        "-DNDEBUG    -O3 -Wstrict-aliasing=1 -ffast-math ")
+# SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-DNDEBUG -g -O3 -Wstrict-aliasing=1 -ffast-math ")
+
+SET(CMAKE_C_FLAGS         "${CMAKE_C_FLAGS} -std=c99")
+SET(CMAKE_C_FLAGS_DEBUG   "-DDEBUG  -g")
+SET(CMAKE_C_FLAGS_RELEASE "-DNDEBUG    -O3")
+
+
+
 
 # keep the library path in installed executables
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
@@ -33,8 +59,7 @@ if(BUILD_DISPLAYCLUSTER)
     option(ENABLE_PYTHON_SUPPORT "Enable Python support" OFF)
 endif()
 
-# path for additional modules
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
+
 
 if(BUILD_DISPLAYCLUSTER OR BUILD_DISPLAYCLUSTER_LIBRARY OR BUILD_DESKTOPSTREAMER)
     # find and setup Qt4

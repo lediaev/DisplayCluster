@@ -64,7 +64,7 @@ enum PIXEL_FORMAT { RGB=0, RGBA=1, ARGB=2, BGR=3, BGRA=4, ABGR=5 };
 extern DcSocket * dcStreamConnect(const char * hostname);
 
 // closes a previously opened connection, deleting the socket.
-extern void dcStreamDisconnect(DcSocket * socket);
+extern void dcStreamDisconnect(DcSocket *& socket);
 
 // reset all stream segments associated with this connection.
 extern void dcStreamReset(DcSocket * socket);

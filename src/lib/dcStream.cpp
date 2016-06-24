@@ -85,11 +85,12 @@ DcSocket * dcStreamConnect(const char * hostname)
     return dcSocket;
 }
 
-void dcStreamDisconnect(DcSocket * socket)
+void dcStreamDisconnect(DcSocket * & socket)
 {
-    delete socket;
-
-    socket = NULL;
+    if (socket != NULL) {
+        delete socket;
+        socket = NULL;
+    }
 }
 
 void dcStreamReset(DcSocket * socket)
