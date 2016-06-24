@@ -210,6 +210,11 @@ void PixelStream::updateTexture(QImage & image)
 
 void loadImageDataThread(boost::shared_ptr<PixelStream> pixelStream, QByteArray imageData)
 {
+
+
+
+
+
     // use libjpeg-turbo for JPEG conversion
     tjhandle handle = pixelStream->getHandle();
 
@@ -237,6 +242,15 @@ void loadImageDataThread(boost::shared_ptr<PixelStream> pixelStream, QByteArray 
         put_flog(LOG_ERROR, "libjpeg-turbo image decompression failure");
         return;
     }
+    /*
+    uint c = 0x0000ff00;
+    int width=64;
+    int height=64;
+    QImage image = QImage(width, height, QImage::Format_RGB32);
+    for (int i=0; i<height; i++) {
+        for (int j=0; j<height; j++)
+            image.setPixel(i,j,c);
+    }*/
 
     pixelStream->imageReady(image);
 }

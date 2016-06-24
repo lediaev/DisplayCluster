@@ -73,7 +73,7 @@ int main(int argc, char * argv[])
 {
     put_flog(LOG_INFO, "");
 
-    std::cout << "trying to connect to host ";
+    //std::cout << "LEDIAEV main\n";
    // exit(-1);
 
     // get base directory

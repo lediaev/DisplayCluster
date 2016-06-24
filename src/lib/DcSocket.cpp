@@ -41,15 +41,8 @@
 #include "../log.h"
 #include <QtNetwork/QTcpSocket>
 
-//#include <stdio.h>
-
 DcSocket::DcSocket(const char * hostname)
 {
-
-
-    std::cout << "LEDIAEV DcSocket: trying to connect to host " << hostname << "\n";
-
-
     // defaults
     socket_ = NULL;
     disconnectFlag_ = false;
@@ -112,12 +105,6 @@ bool DcSocket::connect(const char * hostname)
 {
     // make sure we're disconnected
     disconnect();
-
-    FILE *ofile;
-    ofile = fopen("/nfshome/lmlediae/Desktop/lediaev_log_DcSocket_connect.txt","w");
-    fprintf(ofile,"trying to connect to hose %s\n", hostname);
-    fclose(ofile);
-
 
     // reset everything
     sendMessagesQueue_ = std::queue<QByteArray>();
@@ -200,6 +187,8 @@ void DcSocket::disconnect()
 void DcSocket::run()
 {
     put_flog(LOG_DEBUG, "started");
+
+    //printf("\n+ LEDIAEV DcSocket::run()\n\n");
 
     while(true)
     {
@@ -341,6 +330,8 @@ bool DcSocket::socketSendMessage(QByteArray message)
 
 bool DcSocket::socketReceiveMessage(MessageHeader & messageHeader, QByteArray & message)
 {
+    //return false;
+
     if(socket_->state() != QAbstractSocket::ConnectedState)
     {
         return false;

@@ -73,11 +73,6 @@ DcSocket * dcStreamConnect(const char * hostname)
 {
     DcSocket * dcSocket = new DcSocket(hostname);
 
-
-
-    std::cout << "LEDIAEV dcStreamConnect: trying to connect to host " << hostname << "\n";
-
-
     if(dcSocket->isConnected() != true)
     {
         delete dcSocket;
@@ -172,6 +167,11 @@ std::vector<DcStreamParameters> dcStreamGenerateParameters(std::string name, int
 
 bool dcStreamSend(DcSocket * socket, unsigned char * imageBuffer, int imageX, int imageY, int imageWidth, int imagePitch, int imageHeight, PIXEL_FORMAT pixelFormat, DcStreamParameters parameters)
 {
+
+
+    //return false;
+
+
     // compute imagePitch if necessary, assuming imageBuffer isn't padded
     if(imagePitch == 0)
     {
@@ -185,16 +185,30 @@ bool dcStreamSend(DcSocket * socket, unsigned char * imageBuffer, int imageX, in
     int jpegSize = 0;
 
     bool success = dcStreamComputeJpeg(segmentImageBuffer, parameters.width, imagePitch, parameters.height, pixelFormat, &jpegData, jpegSize);
+    //bool success = true;
+
 
     if(success == false)
     {
-        free(jpegData);
+        if (jpegData != NULL)
+            free(jpegData);
         return false;
     }
 
-    success = dcStreamSendJpeg(socket, parameters, jpegData, jpegSize, false);
+    if (0) {
+        if (jpegData != NULL)
+            free(jpegData);
+        jpegData = new char[10*imageWidth*imageHeight];
+        for (int i=0; i<10*imageWidth*imageHeight; i++) {
+            jpegData[i] = 0x0000ff00;
+        }
+    }
 
-    free(jpegData);
+    success = dcStreamSendJpeg(socket, parameters, jpegData, jpegSize, false);
+    //success = dcStreamSendJpeg(socket, parameters, jpegData, 0, false);
+
+    if (jpegData != NULL)
+        free(jpegData);
     return success;
 }
 
@@ -311,8 +325,12 @@ bool dcStreamSendJpeg(DcSocket * socket, DcStreamParameters parameters, const ch
         message.append(jpegData, jpegSize);
     }
 
+
+
     // queue the message to be sent
     bool success = socket->queueMessage(message);
+
+    //return true;
 
     // make sure this sourceIndex is in the vector of current source indices for this stream name
     if(count(g_dcStreamSourceIndices[parameters.name].begin(), g_dcStreamSourceIndices[parameters.name].end(), parameters.sourceIndex) == 0)
@@ -394,7 +412,11 @@ bool dcStreamComputeJpeg(unsigned char * imageBuffer, int width, int pitch, int 
     }
 
     // move the JPEG buffer to our own memory and free the libjpeg-turbo allocated memory
-    *jpegData = (char *)realloc((void *)*jpegData, tjJpegSize);
+    if (jpegData != NULL) {
+        *jpegData = (char *)realloc((void *)*jpegData, tjJpegSize);
+    } else {
+        *jpegData = (char *)malloc(tjJpegSize * sizeof(char *));
+    }
     memcpy(*jpegData, tjJpegBufPtr, tjJpegSize);
     tjFree(tjJpegBufPtr);
 
