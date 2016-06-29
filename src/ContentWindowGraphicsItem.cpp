@@ -61,6 +61,10 @@ ContentWindowGraphicsItem::ContentWindowGraphicsItem(boost::shared_ptr<ContentWi
     setWindowState(windowState_, (ContentWindowInterface *)-1);
 
     // current coordinates
+
+    //x_ = y_ = 0;
+    //w_ = h_ = 1;
+
     setRect(x_, y_, w_, h_);
 
     // new items at the front
