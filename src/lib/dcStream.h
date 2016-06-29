@@ -43,6 +43,8 @@
 #include <string>
 #include <vector>
 
+#include <mutex>
+
 class DcSocket;
 
 struct DcStreamParameters  {

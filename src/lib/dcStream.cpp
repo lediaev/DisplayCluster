@@ -50,6 +50,15 @@
 // default to undefined frame index
 int g_dcStreamFrameIndex = FRAME_INDEX_UNDEFINED;
 
+#define USE_MUTEX
+
+#ifdef USE_MUTEX
+std::mutex mut_FrameIndex;
+std::mutex mut_SourceIndices;
+std::mutex mut_Qt;
+std::mutex mut_send;
+#endif
+
 // all current source indices for each stream name
 std::map<std::string, std::vector<int> > g_dcStreamSourceIndices;
 
@@ -112,7 +121,13 @@ void dcStreamReset(DcSocket * socket)
     }
 
     // clear the current source indices for each stream name
+#ifdef USE_MUTEX
+    mut_SourceIndices.lock();
+#endif
     g_dcStreamSourceIndices.clear();
+#ifdef USE_MUTEX
+    mut_SourceIndices.unlock();
+#endif
 }
 
 DcStreamParameters dcStreamGenerateParameters(std::string name, int sourceIndex, int x, int y, int width, int height, int totalWidth, int totalHeight)
@@ -168,11 +183,6 @@ std::vector<DcStreamParameters> dcStreamGenerateParameters(std::string name, int
 
 bool dcStreamSend(DcSocket * socket, unsigned char * imageBuffer, int imageX, int imageY, int imageWidth, int imagePitch, int imageHeight, PIXEL_FORMAT pixelFormat, DcStreamParameters parameters)
 {
-
-
-    //return false;
-
-
     // compute imagePitch if necessary, assuming imageBuffer isn't padded
     if(imagePitch == 0)
     {
@@ -186,30 +196,28 @@ bool dcStreamSend(DcSocket * socket, unsigned char * imageBuffer, int imageX, in
     int jpegSize = 0;
 
     bool success = dcStreamComputeJpeg(segmentImageBuffer, parameters.width, imagePitch, parameters.height, pixelFormat, &jpegData, jpegSize);
-    //bool success = true;
-
 
     if(success == false)
     {
         if (jpegData != NULL)
             free(jpegData);
+
         return false;
     }
 
-    if (0) {
-        if (jpegData != NULL)
-            free(jpegData);
-        jpegData = new char[10*imageWidth*imageHeight];
-        for (int i=0; i<10*imageWidth*imageHeight; i++) {
-            jpegData[i] = 0x0000ff00;
-        }
-    }
+#ifdef USE_MUTEX
+    mut_send.lock();
+#endif
 
     success = dcStreamSendJpeg(socket, parameters, jpegData, jpegSize, false);
-    //success = dcStreamSendJpeg(socket, parameters, jpegData, 0, false);
+
+#ifdef USE_MUTEX
+    mut_send.unlock();
+#endif
 
     if (jpegData != NULL)
         free(jpegData);
+
     return success;
 }
 
@@ -310,7 +318,13 @@ bool dcStreamSendJpeg(DcSocket * socket, DcStreamParameters parameters, const ch
     ParallelPixelStreamSegmentParameters p;
 
     p.sourceIndex = parameters.sourceIndex;
+#ifdef USE_MUTEX
+    mut_FrameIndex.lock();
+#endif
     p.frameIndex = g_dcStreamFrameIndex;
+#ifdef USE_MUTEX
+    mut_FrameIndex.unlock();
+#endif
     p.x = parameters.x;
     p.y = parameters.y;
     p.width = parameters.width;
@@ -329,21 +343,46 @@ bool dcStreamSendJpeg(DcSocket * socket, DcStreamParameters parameters, const ch
 
 
     // queue the message to be sent
+#ifdef USE_MUTEX
+    mut_Qt.lock();
+#endif
     bool success = socket->queueMessage(message);
-
-    //return true;
-
-    // make sure this sourceIndex is in the vector of current source indices for this stream name
-    if(count(g_dcStreamSourceIndices[parameters.name].begin(), g_dcStreamSourceIndices[parameters.name].end(), parameters.sourceIndex) == 0)
-    {
-        g_dcStreamSourceIndices[parameters.name].push_back(parameters.sourceIndex);
-    }
-
     // wait for acknowledgment if requested. this wait can be disabled to buffer all sends before waiting for acknowledgments, for example.
     if(waitForAck == true)
     {
         socket->waitForAck();
     }
+#ifdef USE_MUTEX
+    mut_Qt.unlock();
+#endif
+    //return true;
+
+#ifdef USE_MUTEX
+    mut_SourceIndices.lock();
+#endif
+    // make sure this sourceIndex is in the vector of current source indices for this stream name
+
+
+    int n_streams = g_dcStreamSourceIndices.count(parameters.name);
+    if (n_streams == 1) {
+        std::vector<int> & stream_indexes = g_dcStreamSourceIndices[parameters.name];
+        int index_count = count(stream_indexes.begin(), stream_indexes.end(), parameters.sourceIndex);
+        if (index_count == 0) {
+            stream_indexes.push_back(parameters.sourceIndex);
+        }
+    } else {
+
+    }
+
+    // if(count(g_dcStreamSourceIndices[parameters.name].begin(), g_dcStreamSourceIndices[parameters.name].end(), parameters.sourceIndex) == 0)
+    // {   // Crashes here.
+    //     g_dcStreamSourceIndices[parameters.name].push_back(parameters.sourceIndex);
+    // }
+
+
+#ifdef USE_MUTEX
+    mut_SourceIndices.unlock();
+#endif
 
     return success;
 }
@@ -431,12 +470,25 @@ bool dcStreamComputeJpeg(unsigned char * imageBuffer, int width, int pitch, int 
 
 void dcStreamIncrementFrameIndex()
 {
+#ifdef USE_MUTEX
+    mut_FrameIndex.lock();
+#endif
     g_dcStreamFrameIndex++;
+#ifdef USE_MUTEX
+    mut_FrameIndex.unlock();
+#endif
 }
 
 void dcStreamSetFrameIndex(int frameIndex)
 {
+#ifdef USE_MUTEX
+    mut_FrameIndex.lock();
+#endif
     g_dcStreamFrameIndex = frameIndex;
+
+#ifdef USE_MUTEX
+    mut_FrameIndex.unlock();
+#endif
 }
 
 bool dcStreamSendSVG(DcSocket * socket, std::string name, const char * svgData, int svgSize)
@@ -476,9 +528,14 @@ bool dcStreamSendSVG(DcSocket * socket, std::string name, const char * svgData, 
     }
 
     // queue the message to be sent
+#ifdef USE_MUTEX
+    mut_Qt.lock();
+#endif
     bool success = socket->queueMessage(message);
-
     socket->waitForAck();
+#ifdef USE_MUTEX
+    mut_Qt.unlock();
+#endif
 
     return success;
 }
@@ -514,9 +571,14 @@ bool dcStreamBindInteraction(DcSocket * socket, std::string name)
     message.append((const char *)&mh, sizeof(MessageHeader));
 
     // queue the message to be sent
+#ifdef USE_MUTEX
+    mut_Qt.lock();
+#endif
     bool success = socket->queueMessage(message);
-
     socket->waitForAck();
+#ifdef USE_MUTEX
+    mut_Qt.unlock();
+#endif
 
     return success;
 }
